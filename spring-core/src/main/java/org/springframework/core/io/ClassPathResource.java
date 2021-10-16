@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,19 +143,38 @@ public class ClassPathResource extends AbstractFileResolvingResource {
 	}
 
 	/**
+	 * This implementation checks for the resolution of a resource URL upfront,
+	 * then proceeding with {@link AbstractFileResolvingResource}'s length check.
+	 * @see java.lang.ClassLoader#getResource(String)
+	 * @see java.lang.Class#getResource(String)
+	 */
+	@Override
+	public boolean isReadable() {
+		URL url = resolveURL();
+		return (url != null && checkReadable(url));
+	}
+
+	/**
 	 * Resolves a URL for the underlying class path resource.
 	 * @return the resolved URL, or {@code null} if not resolvable
 	 */
 	@Nullable
 	protected URL resolveURL() {
-		if (this.clazz != null) {
-			return this.clazz.getResource(this.path);
+		try {
+			if (this.clazz != null) {
+				return this.clazz.getResource(this.path);
+			}
+			else if (this.classLoader != null) {
+				return this.classLoader.getResource(this.path);
+			}
+			else {
+				return ClassLoader.getSystemResource(this.path);
+			}
 		}
-		else if (this.classLoader != null) {
-			return this.classLoader.getResource(this.path);
-		}
-		else {
-			return ClassLoader.getSystemResource(this.path);
+		catch (IllegalArgumentException ex) {
+			// Should not happen according to the JDK's contract:
+			// see https://github.com/openjdk/jdk/pull/2662
+			return null;
 		}
 	}
 
@@ -248,10 +267,9 @@ public class ClassPathResource extends AbstractFileResolvingResource {
 		if (this == other) {
 			return true;
 		}
-		if (!(other instanceof ClassPathResource)) {
+		if (!(other instanceof ClassPathResource otherRes)) {
 			return false;
 		}
-		ClassPathResource otherRes = (ClassPathResource) other;
 		return (this.path.equals(otherRes.path) &&
 				ObjectUtils.nullSafeEquals(this.classLoader, otherRes.classLoader) &&
 				ObjectUtils.nullSafeEquals(this.clazz, otherRes.clazz));

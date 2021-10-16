@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.springframework.util.Assert;
  * {@link #forMethodAnnotation method}.
  *
  * @author Juergen Hoeller
+ * @author Sam Brannen
  * @since 2.0
  * @see AnnotationClassFilter
  * @see AnnotationMethodMatcher
@@ -63,7 +64,7 @@ public class AnnotationMatchingPointcut implements Pointcut {
 	}
 
 	/**
-	 * Create a new AnnotationMatchingPointcut for the given annotation type.
+	 * Create a new AnnotationMatchingPointcut for the given annotation types.
 	 * @param classAnnotationType the annotation type to look for at the class level
 	 * (can be {@code null})
 	 * @param methodAnnotationType the annotation type to look for at the method level
@@ -76,7 +77,7 @@ public class AnnotationMatchingPointcut implements Pointcut {
 	}
 
 	/**
-	 * Create a new AnnotationMatchingPointcut for the given annotation type.
+	 * Create a new AnnotationMatchingPointcut for the given annotation types.
 	 * @param classAnnotationType the annotation type to look for at the class level
 	 * (can be {@code null})
 	 * @param methodAnnotationType the annotation type to look for at the method level
@@ -124,10 +125,9 @@ public class AnnotationMatchingPointcut implements Pointcut {
 		if (this == other) {
 			return true;
 		}
-		if (!(other instanceof AnnotationMatchingPointcut)) {
+		if (!(other instanceof AnnotationMatchingPointcut otherPointcut)) {
 			return false;
 		}
-		AnnotationMatchingPointcut otherPointcut = (AnnotationMatchingPointcut) other;
 		return (this.classFilter.equals(otherPointcut.classFilter) &&
 				this.methodMatcher.equals(otherPointcut.methodMatcher));
 	}
@@ -139,9 +139,8 @@ public class AnnotationMatchingPointcut implements Pointcut {
 
 	@Override
 	public String toString() {
-		return "AnnotationMatchingPointcut: " + this.classFilter + ", " +this.methodMatcher;
+		return "AnnotationMatchingPointcut: " + this.classFilter + ", " + this.methodMatcher;
 	}
-
 
 	/**
 	 * Factory method for an AnnotationMatchingPointcut that matches
@@ -169,12 +168,13 @@ public class AnnotationMatchingPointcut implements Pointcut {
 	/**
 	 * {@link ClassFilter} that delegates to {@link AnnotationUtils#isCandidateClass}
 	 * for filtering classes whose methods are not worth searching to begin with.
+	 * @since 5.2
 	 */
 	private static class AnnotationCandidateClassFilter implements ClassFilter {
 
 		private final Class<? extends Annotation> annotationType;
 
-		public AnnotationCandidateClassFilter(Class<? extends Annotation> annotationType) {
+		AnnotationCandidateClassFilter(Class<? extends Annotation> annotationType) {
 			this.annotationType = annotationType;
 		}
 
@@ -182,6 +182,28 @@ public class AnnotationMatchingPointcut implements Pointcut {
 		public boolean matches(Class<?> clazz) {
 			return AnnotationUtils.isCandidateClass(clazz, this.annotationType);
 		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (!(obj instanceof AnnotationCandidateClassFilter that)) {
+				return false;
+			}
+			return this.annotationType.equals(that.annotationType);
+		}
+
+		@Override
+		public int hashCode() {
+			return this.annotationType.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getName() + ": " + this.annotationType;
+		}
+
 	}
 
 }

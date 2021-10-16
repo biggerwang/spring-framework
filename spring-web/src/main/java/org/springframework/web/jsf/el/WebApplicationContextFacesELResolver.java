@@ -18,11 +18,11 @@ package org.springframework.web.jsf.el;
 
 import java.beans.FeatureDescriptor;
 import java.util.Iterator;
-import javax.el.ELContext;
-import javax.el.ELException;
-import javax.el.ELResolver;
-import javax.faces.context.FacesContext;
 
+import jakarta.el.ELContext;
+import jakarta.el.ELException;
+import jakarta.el.ELResolver;
+import jakarta.faces.context.FacesContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -44,10 +44,10 @@ import org.springframework.web.jsf.FacesContextUtils;
  * <p>Configure this resolver in your {@code faces-config.xml} file as follows:
  *
  * <pre class="code">
- * &lt;application>
+ * &lt;application&gt;
  *   ...
- *   &lt;el-resolver>org.springframework.web.jsf.el.WebApplicationContextFacesELResolver&lt;/el-resolver>
- * &lt;/application></pre>
+ *   &lt;el-resolver&gt;org.springframework.web.jsf.el.WebApplicationContextFacesELResolver&lt;/el-resolver&gt;
+ * &lt;/application&gt;</pre>
  *
  * @author Juergen Hoeller
  * @since 2.5

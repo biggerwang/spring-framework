@@ -18,10 +18,10 @@ package org.springframework.orm.jpa;
 
 import java.lang.reflect.Proxy;
 import java.util.List;
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
-import javax.persistence.TransactionRequiredException;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.persistence.TransactionRequiredException;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.orm.jpa.domain.Person;

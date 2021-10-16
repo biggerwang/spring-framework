@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,10 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -243,7 +244,7 @@ public abstract class WebContentGenerator extends WebApplicationObjectSupport {
 	 * <ul>
 	 * <li>seconds == -1 (default value): no generation cache-related headers</li>
 	 * <li>seconds == 0: "Cache-Control: no-store" will prevent caching</li>
-	 * <li>seconds > 0: "Cache-Control: max-age=seconds" will ask to cache content</li>
+	 * <li>seconds &gt; 0: "Cache-Control: max-age=seconds" will ask to cache content</li>
 	 * </ul>
 	 * <p>For more specific needs, a custom {@link org.springframework.http.CacheControl}
 	 * should be used.
@@ -394,9 +395,15 @@ public abstract class WebContentGenerator extends WebApplicationObjectSupport {
 	 */
 	protected final void prepareResponse(HttpServletResponse response) {
 		if (this.cacheControl != null) {
+			if (logger.isTraceEnabled()) {
+				logger.trace("Applying default " + getCacheControl());
+			}
 			applyCacheControl(response, this.cacheControl);
 		}
 		else {
+			if (logger.isTraceEnabled()) {
+				logger.trace("Applying default cacheSeconds=" + this.cacheSeconds);
+			}
 			applyCacheSeconds(response, this.cacheSeconds);
 		}
 		if (this.varyByRequestHeaders != null) {

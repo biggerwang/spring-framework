@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,16 @@
 package org.springframework.web;
 
 import java.lang.reflect.Modifier;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
-import javax.servlet.ServletContainerInitializer;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.HandlesTypes;
+
+import jakarta.servlet.ServletContainerInitializer;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.HandlesTypes;
 
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.lang.Nullable;
@@ -41,7 +43,7 @@ import org.springframework.util.ReflectionUtils;
  * method invoked by any Servlet 3.0-compliant container during container startup assuming
  * that the {@code spring-web} module JAR is present on the classpath. This occurs through
  * the JAR Services API {@link ServiceLoader#load(Class)} method detecting the
- * {@code spring-web} module's {@code META-INF/services/javax.servlet.ServletContainerInitializer}
+ * {@code spring-web} module's {@code META-INF/services/jakarta.servlet.ServletContainerInitializer}
  * service provider configuration file. See the
  * <a href="https://download.oracle.com/javase/6/docs/technotes/guides/jar/jar.html#Service%20Provider">
  * JAR Services API documentation</a> as well as section <em>8.2.4</em> of the Servlet 3.0
@@ -59,8 +61,8 @@ import org.springframework.util.ReflectionUtils;
  *
  * <pre class="code">
  * &lt;absolute-ordering&gt;
- *   &lt;name>some_web_fragment&lt;/name&gt;
- *   &lt;name>spring_web&lt;/name&gt;
+ *   &lt;name&gt;some_web_fragment&lt;/name&gt;
+ *   &lt;name&gt;spring_web&lt;/name&gt;
  * &lt;/absolute-ordering&gt;
  * </pre>
  *
@@ -141,9 +143,10 @@ public class SpringServletContainerInitializer implements ServletContainerInitia
 	public void onStartup(@Nullable Set<Class<?>> webAppInitializerClasses, ServletContext servletContext)
 			throws ServletException {
 
-		List<WebApplicationInitializer> initializers = new LinkedList<>();
+		List<WebApplicationInitializer> initializers = Collections.emptyList();
 
 		if (webAppInitializerClasses != null) {
+			initializers = new ArrayList<>(webAppInitializerClasses.size());
 			for (Class<?> waiClass : webAppInitializerClasses) {
 				// Be defensive: Some servlet containers provide us with invalid classes,
 				// no matter what @HandlesTypes says...

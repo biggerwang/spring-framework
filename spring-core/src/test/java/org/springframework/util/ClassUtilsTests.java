@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,10 @@ package org.springframework.util;
 
 import java.io.Externalizable;
 import java.io.Serializable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -25,12 +29,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import org.springframework.tests.sample.objects.DerivedTestObject;
 import org.springframework.tests.sample.objects.ITestInterface;
@@ -40,22 +47,17 @@ import org.springframework.tests.sample.objects.TestObject;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
+ * Unit tests for {@link ClassUtils}.
+ *
  * @author Colin Sampaleanu
  * @author Juergen Hoeller
  * @author Rob Harrop
  * @author Rick Evans
+ * @author Sam Brannen
  */
 class ClassUtilsTests {
 
-	private ClassLoader classLoader = getClass().getClassLoader();
-
-
-	@BeforeEach
-	void clearStatics() {
-		InnerClass.noArgCalled = false;
-		InnerClass.argCalled = false;
-		InnerClass.overloadedCalled = false;
-	}
+	private final ClassLoader classLoader = getClass().getClassLoader();
 
 
 	@Test
@@ -77,6 +79,12 @@ class ClassUtilsTests {
 		assertThat(ClassUtils.forName("org.springframework.tests.sample.objects.TestObject[][]", classLoader)).isEqualTo(TestObject[][].class);
 		assertThat(ClassUtils.forName(TestObject[][].class.getName(), classLoader)).isEqualTo(TestObject[][].class);
 		assertThat(ClassUtils.forName("[[[S", classLoader)).isEqualTo(short[][][].class);
+	}
+
+	@Test
+	void forNameWithNestedType() throws ClassNotFoundException {
+		assertThat(ClassUtils.forName("org.springframework.util.ClassUtilsTests$NestedClass", classLoader)).isEqualTo(NestedClass.class);
+		assertThat(ClassUtils.forName("org.springframework.util.ClassUtilsTests.NestedClass", classLoader)).isEqualTo(NestedClass.class);
 	}
 
 	@Test
@@ -134,16 +142,39 @@ class ClassUtilsTests {
 		assertThat(ClassUtils.isCacheSafe(String.class, childLoader1)).isTrue();
 		assertThat(ClassUtils.isCacheSafe(String.class, childLoader2)).isTrue();
 		assertThat(ClassUtils.isCacheSafe(String.class, childLoader3)).isTrue();
-		assertThat(ClassUtils.isCacheSafe(InnerClass.class, null)).isFalse();
-		assertThat(ClassUtils.isCacheSafe(InnerClass.class, classLoader)).isTrue();
-		assertThat(ClassUtils.isCacheSafe(InnerClass.class, childLoader1)).isTrue();
-		assertThat(ClassUtils.isCacheSafe(InnerClass.class, childLoader2)).isTrue();
-		assertThat(ClassUtils.isCacheSafe(InnerClass.class, childLoader3)).isTrue();
+		assertThat(ClassUtils.isCacheSafe(NestedClass.class, null)).isFalse();
+		assertThat(ClassUtils.isCacheSafe(NestedClass.class, classLoader)).isTrue();
+		assertThat(ClassUtils.isCacheSafe(NestedClass.class, childLoader1)).isTrue();
+		assertThat(ClassUtils.isCacheSafe(NestedClass.class, childLoader2)).isTrue();
+		assertThat(ClassUtils.isCacheSafe(NestedClass.class, childLoader3)).isTrue();
 		assertThat(ClassUtils.isCacheSafe(composite, null)).isFalse();
 		assertThat(ClassUtils.isCacheSafe(composite, classLoader)).isFalse();
 		assertThat(ClassUtils.isCacheSafe(composite, childLoader1)).isTrue();
 		assertThat(ClassUtils.isCacheSafe(composite, childLoader2)).isFalse();
 		assertThat(ClassUtils.isCacheSafe(composite, childLoader3)).isTrue();
+	}
+
+	@ParameterizedTest(name = "''{0}'' -> {1}")
+	@CsvSource(textBlock = """
+		boolean, boolean
+		byte, byte
+		char, char
+		short, short
+		int, int
+		long, long
+		float, float
+		double, double
+		[Z, boolean[]
+		[B, byte[]
+		[C, char[]
+		[S, short[]
+		[I, int[]
+		[J, long[]
+		[F, float[]
+		[D, double[]
+		""")
+	void resolvePrimitiveClassName(String input, Class<?> output) {
+		assertThat(ClassUtils.resolvePrimitiveClassName(input)).isEqualTo(output);
 	}
 
 	@Test
@@ -177,9 +208,9 @@ class ClassUtilsTests {
 	}
 
 	@Test
-	void getShortNameForInnerClass() {
-		String className = ClassUtils.getShortName(InnerClass.class);
-		assertThat(className).as("Class name did not match").isEqualTo("ClassUtilsTests.InnerClass");
+	void getShortNameForNestedClass() {
+		String className = ClassUtils.getShortName(NestedClass.class);
+		assertThat(className).as("Class name did not match").isEqualTo("ClassUtilsTests.NestedClass");
 	}
 
 	@Test
@@ -268,27 +299,6 @@ class ClassUtilsTests {
 	}
 
 	@Test
-	void noArgsStaticMethod() throws IllegalAccessException, InvocationTargetException {
-		Method method = ClassUtils.getStaticMethod(InnerClass.class, "staticMethod");
-		method.invoke(null, (Object[]) null);
-		assertThat(InnerClass.noArgCalled).as("no argument method was not invoked.").isTrue();
-	}
-
-	@Test
-	void argsStaticMethod() throws IllegalAccessException, InvocationTargetException {
-		Method method = ClassUtils.getStaticMethod(InnerClass.class, "argStaticMethod", String.class);
-		method.invoke(null, "test");
-		assertThat(InnerClass.argCalled).as("argument method was not invoked.").isTrue();
-	}
-
-	@Test
-	void overloadedStaticMethod() throws IllegalAccessException, InvocationTargetException {
-		Method method = ClassUtils.getStaticMethod(InnerClass.class, "staticMethod", String.class);
-		method.invoke(null, "test");
-		assertThat(InnerClass.overloadedCalled).as("argument method was not invoked.").isTrue();
-	}
-
-	@Test
 	void isAssignable() {
 		assertThat(ClassUtils.isAssignable(Object.class, Object.class)).isTrue();
 		assertThat(ClassUtils.isAssignable(String.class, String.class)).isTrue();
@@ -331,17 +341,17 @@ class ClassUtilsTests {
 
 	@Test
 	void classNamesToString() {
-		List<Class<?>> ifcs = new LinkedList<>();
+		List<Class<?>> ifcs = new ArrayList<>();
 		ifcs.add(Serializable.class);
 		ifcs.add(Runnable.class);
 		assertThat(ifcs.toString()).isEqualTo("[interface java.io.Serializable, interface java.lang.Runnable]");
 		assertThat(ClassUtils.classNamesToString(ifcs)).isEqualTo("[java.io.Serializable, java.lang.Runnable]");
 
-		List<Class<?>> classes = new LinkedList<>();
-		classes.add(LinkedList.class);
+		List<Class<?>> classes = new ArrayList<>();
+		classes.add(ArrayList.class);
 		classes.add(Integer.class);
-		assertThat(classes.toString()).isEqualTo("[class java.util.LinkedList, class java.lang.Integer]");
-		assertThat(ClassUtils.classNamesToString(classes)).isEqualTo("[java.util.LinkedList, java.lang.Integer]");
+		assertThat(classes.toString()).isEqualTo("[class java.util.ArrayList, class java.lang.Integer]");
+		assertThat(ClassUtils.classNamesToString(classes)).isEqualTo("[java.util.ArrayList, java.lang.Integer]");
 
 		assertThat(Collections.singletonList(List.class).toString()).isEqualTo("[interface java.util.List]");
 		assertThat(ClassUtils.classNamesToString(List.class)).isEqualTo("[java.util.List]");
@@ -380,8 +390,74 @@ class ClassUtilsTests {
 		assertThat(ClassUtils.determineCommonAncestor(String.class, List.class)).isNull();
 	}
 
+	@ParameterizedTest
+	@WrapperTypes
+	void isPrimitiveWrapper(Class<?> type) {
+		assertThat(ClassUtils.isPrimitiveWrapper(type)).isTrue();
+	}
 
-	public static class InnerClass {
+	@ParameterizedTest
+	@PrimitiveTypes
+	void isPrimitiveOrWrapperWithPrimitive(Class<?> type) {
+		assertThat(ClassUtils.isPrimitiveOrWrapper(type)).isTrue();
+	}
+
+	@ParameterizedTest
+	@WrapperTypes
+	void isPrimitiveOrWrapperWithWrapper(Class<?> type) {
+		assertThat(ClassUtils.isPrimitiveOrWrapper(type)).isTrue();
+	}
+
+
+	@Nested
+	class GetStaticMethodTests {
+
+		@BeforeEach
+		void clearStatics() {
+			NestedClass.noArgCalled = false;
+			NestedClass.argCalled = false;
+			NestedClass.overloadedCalled = false;
+		}
+
+		@Test
+		void noArgsStaticMethod() throws IllegalAccessException, InvocationTargetException {
+			Method method = ClassUtils.getStaticMethod(NestedClass.class, "staticMethod");
+			method.invoke(null, (Object[]) null);
+			assertThat(NestedClass.noArgCalled).as("no argument method was not invoked.").isTrue();
+		}
+
+		@Test
+		void argsStaticMethod() throws IllegalAccessException, InvocationTargetException {
+			Method method = ClassUtils.getStaticMethod(NestedClass.class, "argStaticMethod", String.class);
+			method.invoke(null, "test");
+			assertThat(NestedClass.argCalled).as("argument method was not invoked.").isTrue();
+		}
+
+		@Test
+		void overloadedStaticMethod() throws IllegalAccessException, InvocationTargetException {
+			Method method = ClassUtils.getStaticMethod(NestedClass.class, "staticMethod", String.class);
+			method.invoke(null, "test");
+			assertThat(NestedClass.overloadedCalled).as("argument method was not invoked.").isTrue();
+		}
+
+	}
+
+
+	@Target(ElementType.METHOD)
+	@Retention(RetentionPolicy.RUNTIME)
+	@ValueSource(classes = { Boolean.class, Character.class, Byte.class, Short.class,
+		Integer.class, Long.class, Float.class, Double.class, Void.class })
+	@interface WrapperTypes {
+	}
+
+	@Target(ElementType.METHOD)
+	@Retention(RetentionPolicy.RUNTIME)
+	@ValueSource(classes = { boolean.class, char.class, byte.class, short.class,
+		int.class, long.class, float.class, double.class, void.class })
+	@interface PrimitiveTypes {
+	}
+
+	public static class NestedClass {
 
 		static boolean noArgCalled;
 		static boolean argCalled;

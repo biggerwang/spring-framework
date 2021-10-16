@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ import org.springframework.util.MultiValueMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.MediaType.MULTIPART_MIXED;
 
@@ -82,7 +82,7 @@ class RestTemplateIntegrationTests extends AbstractMockWebServerTests {
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.METHOD)
-	@ParameterizedTest(name = "{0}")
+	@ParameterizedTest(name = "[{index}] {0}")
 	@MethodSource("clientHttpRequestFactories")
 	@interface ParameterizedRestTemplateTest {
 	}
@@ -92,7 +92,6 @@ class RestTemplateIntegrationTests extends AbstractMockWebServerTests {
 		return Stream.of(
 			new SimpleClientHttpRequestFactory(),
 			new HttpComponentsClientHttpRequestFactory(),
-			new org.springframework.http.client.Netty4ClientHttpRequestFactory(),
 			new OkHttp3ClientHttpRequestFactory()
 		);
 	}
@@ -224,10 +223,10 @@ class RestTemplateIntegrationTests extends AbstractMockWebServerTests {
 
 	@ParameterizedRestTemplateTest
 	void patchForObject(ClientHttpRequestFactory clientHttpRequestFactory) throws Exception {
-		setUpClient(clientHttpRequestFactory);
+		assumeFalse(clientHttpRequestFactory instanceof SimpleClientHttpRequestFactory,
+				"JDK client does not support the PATCH method");
 
-		// JDK client does not support the PATCH method
-		assumeFalse(this.clientHttpRequestFactory instanceof SimpleClientHttpRequestFactory);
+		setUpClient(clientHttpRequestFactory);
 
 		String s = template.patchForObject(baseUrl + "/{method}", helloWorld, String.class, "patch");
 		assertThat(s).as("Invalid content").isEqualTo(helloWorld);
@@ -254,7 +253,7 @@ class RestTemplateIntegrationTests extends AbstractMockWebServerTests {
 				template.execute(baseUrl + "/status/badrequest", HttpMethod.GET, null, null))
 			.satisfies(ex -> {
 				assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-				assertThat(ex.getMessage()).isEqualTo("400 Client Error");
+				assertThat(ex.getMessage()).isEqualTo("400 Client Error: [no body]");
 			});
 	}
 

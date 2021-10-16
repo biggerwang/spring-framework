@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.context.support;
 
 import java.lang.management.ManagementFactory;
 import java.util.Set;
+
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.mock;
  * @author Stephane Nicoll
  * @author Sam Brannen
  */
+@SuppressWarnings("deprecation")
 class LiveBeansViewTests {
 
 	private final MockEnvironment environment = new MockEnvironment();

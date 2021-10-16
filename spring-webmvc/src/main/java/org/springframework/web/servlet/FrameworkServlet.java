@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-import javax.servlet.DispatcherType;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
+
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationContext;
@@ -220,7 +221,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	private boolean webApplicationContextInjected = false;
 
 	/** Flag used to detect whether onRefresh has already been called. */
-	private volatile boolean refreshEventReceived = false;
+	private volatile boolean refreshEventReceived;
 
 	/** Monitor for synchronized onRefresh execution. */
 	private final Object onRefreshMonitor = new Object();
@@ -442,7 +443,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * Set whether this servlet should dispatch an HTTP OPTIONS request to
 	 * the {@link #doService} method.
 	 * <p>Default in the {@code FrameworkServlet} is "false", applying
-	 * {@link javax.servlet.http.HttpServlet}'s default behavior (i.e.enumerating
+	 * {@link jakarta.servlet.http.HttpServlet}'s default behavior (i.e.enumerating
 	 * all standard HTTP request methods as a response to the OPTIONS request).
 	 * Note however that as of 4.3 the {@code DispatcherServlet} sets this
 	 * property to "true" by default due to its built-in support for OPTIONS.
@@ -461,7 +462,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	/**
 	 * Set whether this servlet should dispatch an HTTP TRACE request to
 	 * the {@link #doService} method.
-	 * <p>Default is "false", applying {@link javax.servlet.http.HttpServlet}'s
+	 * <p>Default is "false", applying {@link jakarta.servlet.http.HttpServlet}'s
 	 * default behavior (i.e. reflecting the message received back to the client).
 	 * <p>Turn this flag on if you prefer TRACE requests to go through the
 	 * regular dispatching chain, just like other HTTP requests. This usually
@@ -1083,8 +1084,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			return;
 		}
 
-		String dispatchType = request.getDispatcherType().name();
-		boolean initialDispatch = request.getDispatcherType().equals(DispatcherType.REQUEST);
+		DispatcherType dispatchType = request.getDispatcherType();
+		boolean initialDispatch = (dispatchType == DispatcherType.REQUEST);
 
 		if (failureCause != null) {
 			if (!initialDispatch) {
@@ -1108,7 +1109,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		}
 
 		int status = response.getStatus();
-		String headers = ""; // nothing below trace
+		String headers = "";  // nothing below trace
 
 		if (logger.isTraceEnabled()) {
 			Collection<String> names = response.getHeaderNames();
@@ -1152,7 +1153,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * Can be overridden in subclasses.
 	 * @param request current HTTP request
 	 * @return the username, or {@code null} if none found
-	 * @see javax.servlet.http.HttpServletRequest#getUserPrincipal()
+	 * @see jakarta.servlet.http.HttpServletRequest#getUserPrincipal()
 	 */
 	@Nullable
 	protected String getUsernameForRequest(HttpServletRequest request) {
@@ -1171,8 +1172,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @param request current HTTP request
 	 * @param response current HTTP response
 	 * @throws Exception in case of any kind of processing failure
-	 * @see javax.servlet.http.HttpServlet#doGet
-	 * @see javax.servlet.http.HttpServlet#doPost
+	 * @see jakarta.servlet.http.HttpServlet#doGet
+	 * @see jakarta.servlet.http.HttpServlet#doPost
 	 */
 	protected abstract void doService(HttpServletRequest request, HttpServletResponse response)
 			throws Exception;

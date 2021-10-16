@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.test.context.junit.jupiter.transaction;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
@@ -59,14 +60,14 @@ class TimedTransactionalSpringExtensionTests {
 		Events events = EngineTestKit.engine("junit-jupiter")
 				.selectors(selectClass(TestCase.class))
 				.execute()
-				.tests()
+				.testEvents()
 				.assertStatistics(stats -> stats.started(4).succeeded(2).failed(2));
 
 		events.failed().assertThatEvents().haveExactly(2,
 			event(test("WithExceededJUnitJupiterTimeout"),
 				finishedWithFailure(
 					instanceOf(TimeoutException.class),
-					message(msg -> msg.endsWith("timed out after 50 milliseconds")))));
+					message(msg -> msg.endsWith("timed out after 10 milliseconds")))));
 	}
 
 
@@ -82,10 +83,10 @@ class TimedTransactionalSpringExtensionTests {
 		}
 
 		@Test
-		@Timeout(value = 50, unit = TimeUnit.MILLISECONDS)
+		@Timeout(value = 10, unit = TimeUnit.MILLISECONDS)
 		void transactionalWithExceededJUnitJupiterTimeout() throws Exception {
 			assertThatTransaction().isActive();
-			Thread.sleep(100);
+			Thread.sleep(200);
 		}
 
 		@Test
@@ -96,11 +97,11 @@ class TimedTransactionalSpringExtensionTests {
 		}
 
 		@Test
-		@Timeout(value = 50, unit = TimeUnit.MILLISECONDS)
+		@Timeout(value = 10, unit = TimeUnit.MILLISECONDS)
 		@Transactional(propagation = Propagation.NOT_SUPPORTED)
 		void notTransactionalWithExceededJUnitJupiterTimeout() throws Exception {
 			assertThatTransaction().isNotActive();
-			Thread.sleep(100);
+			Thread.sleep(200);
 		}
 
 

@@ -265,7 +265,6 @@ public interface ServerResponse {
 		/**
 		 * Set the set of allowed {@link HttpMethod HTTP methods}, as specified
 		 * by the {@code Allow} header.
-		 *
 		 * @param allowedMethods the allowed methods
 		 * @return this builder
 		 * @see HttpHeaders#setAllow(Set)
@@ -345,8 +344,8 @@ public interface ServerResponse {
 
 		/**
 		 * Build the response entity with no body.
-		 * The response will be committed when the given {@code voidPublisher} completes.
-		 * @param voidPublisher publisher publisher to indicate when the response should be committed
+		 * <p>The response will be committed when the given {@code voidPublisher} completes.
+		 * @param voidPublisher the publisher to indicate when the response should be committed
 		 */
 		Mono<ServerResponse> build(Publisher<Void> voidPublisher);
 
@@ -399,8 +398,8 @@ public interface ServerResponse {
 
 		/**
 		 * Set the body of the response to the given {@code Object} and return it.
-		 * This is a shortcut for using a {@link #body(BodyInserter)} with an
-		 * {@linkplain BodyInserters#fromObject Object inserter}.
+		 * This is a shortcut for using a {@link #body(BodyInserter)} with a
+		 * {@linkplain BodyInserters#fromValue value inserter}.
 		 * @param body the body of the response
 		 * @return the built response
 		 * @throws IllegalArgumentException if {@code body} is a

@@ -19,7 +19,8 @@ package org.springframework.web.servlet.function;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
-import javax.servlet.http.Cookie;
+
+import jakarta.servlet.http.Cookie;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
